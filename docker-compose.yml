@@ -1,0 +1,32 @@
+version: '3.0'
+services:
+  cassandra-server:
+    image: cassandra:latest
+    container_name: 'cassandra-server-iot'
+    hostname: 'cassandra-server1'
+    healthcheck:
+      test: [ "CMD-SHELL", "cqlsh", "-e", "describe keyspaces" ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_SEEDS=cassandra-server1
+      - CASSANDRA_CLUSTER_NAME=Digitalisevent
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_NUM_TOKENS=128
+  cassandra-init:
+    image: cassandra:latest
+    hostname: init
+    volumes:
+      - ./scripts:/scripts
+    command: /scripts/cassandra-init-seed-data.sh && /bin/bash
+    depends_on:
+      cassandra-server:
+        condition: service_healthy
+    restart: "no"
